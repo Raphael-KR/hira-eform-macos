@@ -1,6 +1,7 @@
 import forge from "node-forge";
 import { signDn } from "./signer.js";
 import { listConfiguredCerts } from "./certInfo.js";
+import { BadPasswordError } from "./krPbe.js";
 
 export const API = {
   CHECK_INSTALL: 0,
@@ -137,8 +138,17 @@ async function dispatch(inner, env, session) {
         if (e.message.startsWith("Password wrapper")) throw e;
         // not JSON → assume already plaintext (defensive)
       }
-      const cms = await signDn({ dn, inputB64: input, password: rawPw });
-      return { Status: 0, Output: cms };
+      try {
+        const cms = await signDn({ dn, inputB64: input, password: rawPw });
+        return { Status: 0, Output: cms };
+      } catch (e) {
+        if (e instanceof BadPasswordError) {
+          // PBE_DEC_FAILED (0x6008). Client maps this to
+          // "[24584] 인증서 비밀번호가 올바르지 않습니다" and re-prompts.
+          return { Status: e.code };
+        }
+        throw e;
+      }
     }
 
     default:

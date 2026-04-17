@@ -15,6 +15,19 @@
 import forge from "node-forge";
 import "./seed.js";
 
+// Thrown when EncryptedPrivateKeyInfo decryption fails — almost always a wrong
+// password. Carries the KCase PBE_DEC_FAILED code (0x6008) so protocol.js can
+// return the Status the browser client expects to render
+// "[24584] 인증서 비밀번호가 올바르지 않습니다" instead of falling back to
+// the "agent outdated" path.
+export class BadPasswordError extends Error {
+  constructor() {
+    super("encrypted private key decryption failed (wrong password)");
+    this.name = "BadPasswordError";
+    this.code = 0x6008;
+  }
+}
+
 const OID = {
   pbes2:              "1.2.840.113549.1.5.13",
   pbkdf2:             "1.2.840.113549.1.5.12",
@@ -65,7 +78,7 @@ function seedCbcDecrypt(key, iv, ciphertext) {
   const d = forge.cipher.createDecipher("SEED-CBC", key);
   d.start({ iv });
   d.update(forge.util.createBuffer(ciphertext));
-  if (!d.finish()) throw new Error("SEED-CBC decrypt failed (bad password?)");
+  if (!d.finish()) throw new BadPasswordError();
   return d.output.getBytes();
 }
 

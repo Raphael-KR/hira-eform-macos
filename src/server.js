@@ -2,6 +2,7 @@ import fs from "node:fs";
 import https from "node:https";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import forge from "node-forge";
 import { WebSocketServer } from "ws";
 import { Session } from "./session.js";
 import { parseEnvelope, handleEnvelope } from "./protocol.js";
@@ -55,7 +56,21 @@ wss.on("connection", (ws, req) => {
       ws.send(out);
     } catch (err) {
       console.error("[conn] error:", err, err?.stack);
-      ws.send(JSON.stringify({ Status: -1, Error: String(err) }));
+      // If we're past HANDSHAKE, the client expects SEED-encrypted responses.
+      // Sending plaintext here looks to the client like the agent crashed,
+      // which triggers the "PKI 버전업 / 설치페이지로 이동" fallback in
+      // pkiLogin.jsp. Wrap error responses the same way a normal response is.
+      const errBody = { Status: -1, Error: String(err) };
+      if (session.secure) {
+        try {
+          const cipher = session.seedEncrypt(JSON.stringify(errBody));
+          ws.send(JSON.stringify({ Output: forge.util.encode64(cipher) }));
+        } catch {
+          ws.send(JSON.stringify(errBody));
+        }
+      } else {
+        ws.send(JSON.stringify(errBody));
+      }
     }
   });
 
