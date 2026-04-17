@@ -81,5 +81,5 @@ function peekApi(env, session) {
 
 const PORT = 8443;
 httpsServer.listen(PORT, "127.0.0.1", () => {
-  console.log(`hira-kcase-emulator listening on wss://127.0.0.1:${PORT}`);
+  console.log(`hira-eform-macos listening on wss://127.0.0.1:${PORT}`);
 });

@@ -1,4 +1,4 @@
-# HIRA KCase Emulator (macOS)
+# HIRA e-Form login for macOS
 
 A minimal Node.js re-implementation of the Windows-only **KSignCase / KCase**
 PKI browser agent, enough to complete 공동인증서 login on
