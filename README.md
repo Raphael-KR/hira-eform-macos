@@ -136,10 +136,30 @@ HIRA_SIGN_CERT=/path/to/signCert.der HIRA_SIGN_KEY=/path/to/signPri.key npm star
   RSA key, and kept only in memory (with the decrypted key cached per-path
   so repeat signs don't re-prompt).
 
+## Intended use
+
+This project exists so the **legitimate holder** of a 공동인증서 can use it
+to log into `ef.hira.or.kr` from their own macOS machine. Using it with a
+certificate that isn't yours, or to sign on behalf of someone who didn't
+authorize it, is not what it is for and is likely illegal under Korean law
+regardless of this tool's involvement.
+
+Provided AS-IS, no warranty. You are responsible for the safety of your
+own cert files, password, and any signed artifacts this tool produces.
+
 ## Legal
 
-Reverse-engineered by looking at the browser-side JavaScript HIRA serves
-(which runs unminified-enough in any browser), plus captured WebSocket frames
-against a Windows KCase install. Does not redistribute any KSIGN, HIRA, or
-KICA binaries or source. See also [PyPinkSign](https://github.com/bandoche/PyPinkSign)
-for an independent Python reference of the 공동인증서 key format.
+Reverse-engineered for the purpose of interoperability with a Windows-only
+agent, by reading the browser-side JavaScript HIRA serves (unminified enough
+in any browser) and capturing WebSocket frames against a local Windows KCase
+install. This falls under the explicit interoperability exception in Korean
+copyright law (저작권법 제101조의4), which permits decompilation/analysis
+necessary to achieve compatibility between independently created programs.
+
+Does not redistribute any KSIGN, HIRA, or KICA binaries or source. No
+affiliation with HIRA, KSIGN, or any licensed CA. Product/company names
+(KSignCase, KCase, KAccess) are referenced only for compatibility
+description — nominative fair use, not endorsement.
+
+See also [PyPinkSign](https://github.com/bandoche/PyPinkSign) for an
+independent Python reference of the 공동인증서 key format.
