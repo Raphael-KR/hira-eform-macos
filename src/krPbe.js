@@ -136,8 +136,15 @@ function decryptEpki(epkiAsn1, password) {
 export function loadEncryptedKeyDer(derBytes, password) {
   const epki = forge.asn1.fromDer(derBytes);
   const pkiDer = decryptEpki(epki, password);
-  const pkiAsn1 = forge.asn1.fromDer(pkiDer);
-  // PrivateKeyInfo ::= SEQUENCE { version, algorithm, privateKey OCTET STRING }
-  // forge helper accepts the ASN.1 directly:
-  return forge.pki.privateKeyFromAsn1(pkiAsn1);
+  // PKCS#7 padding verification inside seedCbcDecrypt catches ~255/256 of
+  // wrong-password cases. For the rest, the garbage "plaintext" happens to
+  // end in a byte that is a valid padding length, so decrypt "succeeds" but
+  // the content isn't a PrivateKeyInfo. Treat any post-decrypt parse failure
+  // as a wrong-password signal so the client gets [24584] instead of [-1].
+  try {
+    const pkiAsn1 = forge.asn1.fromDer(pkiDer);
+    return forge.pki.privateKeyFromAsn1(pkiAsn1);
+  } catch {
+    throw new BadPasswordError();
+  }
 }
