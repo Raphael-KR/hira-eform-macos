@@ -14,6 +14,49 @@ and produces a CMS SignedData that HIRA's extsso server accepts.
 > different auth flows and are out of scope). No warranty, no affiliation with
 > HIRA or KSIGN.
 
+## Why this exists
+
+HIRA's 공동인증서 login page does not talk to the certificate directly. It
+talks to a **local** Windows service (KCase agent) over `wss://127.0.0.1:8443`
+and to a **local** KAccess SSO helper over `https://127.0.0.1:39091`. Both
+ship only as Windows installers (historically ActiveX, now a native service),
+so on macOS the login page has no one to talk to and fails before the
+password prompt. This project runs those two endpoints locally on macOS with
+just enough of the protocol to finish the login.
+
+```
+  Browser (ef.hira.or.kr)
+      │  wss://127.0.0.1:8443   ← kcase agent
+      │  https://127.0.0.1:39091 ← kaccess sso
+      ▼
+  this repo ──► reads ~/Library/Preferences/NPKI/ ──► CMS SignedData
+      │
+      ▼  POST /sso/pmi-sso-login-certificate.jsp
+  extsso.hira.or.kr
+```
+
+## Three non-obvious CMS quirks
+
+Once the WebSocket handshake works, 90% of remaining time is spent fighting
+HIRA's extsso verifier (`[8] 로그인 처리시 오류가 발생했습니다`). The Windows
+KCase agent emits a CMS SignedData with three things forge/openssl defaults
+get wrong:
+
+1. **No `signedAttrs`.** SignerInfo has exactly 5 fields. The signature is
+   computed over the raw encapContent bytes, not over a DER-encoded
+   Attributes SET. With node-forge, omit `authenticatedAttributes` in
+   `addSigner({...})`.
+2. **encapContent is CP949, not UTF-8.** The browser sends
+   `Input = base64(utf8(DN))`, but the Windows agent re-encodes to CP949
+   before it goes into the OCTET STRING. Example: `미` is `B9 CC` in CP949,
+   not `EB AF BC`. Use `iconv-lite.encode(dn, "cp949")`.
+3. **`signatureAlgorithm = sha256WithRSAEncryption`** (OID
+   `1.2.840.113549.1.1.11`), not the bare `rsaEncryption` OID that forge
+   emits by default.
+
+See [`docs/SIGN_FLOW.md`](docs/SIGN_FLOW.md) for the full walk-through and
+[`docs/reference-cms.txt`](docs/reference-cms.txt) for an ASN.1 template.
+
 ## What it replaces
 
 | Windows component       | This project                                             |
