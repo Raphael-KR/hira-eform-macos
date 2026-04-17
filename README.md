@@ -2,15 +2,17 @@
 
 A minimal Node.js re-implementation of the Windows-only **KSignCase / KCase**
 PKI browser agent, enough to complete 공동인증서 login on
-`https://ef.hira.or.kr` (건강보험심사평가원 요양기관 업무포털) from macOS.
+`https://ef.hira.or.kr` (건강보험심사평가원 e-Form 시스템) from macOS.
 
 The real KCase agent is a native Windows service that the HIRA login page
 talks to over a local WebSocket. This project emulates the subset of its
 protocol that HIRA uses, reads the 공동인증서 from `~/Library/Preferences/NPKI/`,
 and produces a CMS SignedData that HIRA's extsso server accepts.
 
-> **Status:** works for HIRA e-form login as of 2026-04. No other KCase sites
-> have been tested. No warranty, no affiliation with HIRA or KSIGN.
+> **Status:** works for `ef.hira.or.kr` login as of 2026-04. Not tested on any
+> other HIRA site (the main `portal.hira.or.kr`, `biz.hira.or.kr`, etc. use
+> different auth flows and are out of scope). No warranty, no affiliation with
+> HIRA or KSIGN.
 
 ## What it replaces
 
