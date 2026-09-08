@@ -14,3 +14,22 @@ certs/*.crt
 # Anything mirrored from HIRA for reverse-engineering. These captures
 # contain live session cookies and replayable signeddata.
 recon/
+
+# Private credentials, collection output and browser/network captures.
+.env
+.env.*
+*.der
+*.key
+*.pem
+*.p12
+*.pfx
+*.cms
+*.har
+*.jsonl
+**/results.json
+**/receipt.json
+outputs/
+downloads/
+browser-profile/
+playwright-report/
+test-results/

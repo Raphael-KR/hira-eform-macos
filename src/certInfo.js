@@ -154,9 +154,9 @@ export function listConfiguredCerts() {
       const der = fs.readFileSync(certPath, "binary");
       const certObj = certDerToCertObj(der, idx);
       out.push({ certObj, certPath, keyPath, status: 0 });
-      console.log("[cert] loaded %s (CN=%s)", certPath, certObj.subjectCN);
+      console.log("[cert] certificate loaded");
     } catch (err) {
-      console.error("[cert] failed to load", certPath, err);
+      console.error("[cert] failed to load certificate; details suppressed");
     }
   });
   return out;

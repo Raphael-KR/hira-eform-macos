@@ -102,9 +102,9 @@ kcaseagent error table — it originates from the extsso iframe, not the agent.
 
 | Script                          | Purpose                                       |
 |---------------------------------|-----------------------------------------------|
-| `scripts/test-sign.js <pw>`     | End-to-end signDn + ASN.1 pretty-print        |
+| `scripts/test-sign.js`          | Keychain-backed local sign check; no sensitive dump |
 | `scripts/inspect-cms.js <file>` | Pretty-print any base64/DER CMS               |
-| `scripts/diagnose-pbes1.js`     | Brute-forces 8 KDF variants against signPri.key if decryption regresses |
+| `scripts/verify-keychain.js`    | Local password/key/certificate match check     |
 
 Reference captures:
 - `recon/hira-capture.jsonl` — CDP trace of a real Windows login. **Treat as a

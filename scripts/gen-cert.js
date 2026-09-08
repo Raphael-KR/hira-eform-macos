@@ -9,6 +9,18 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(here, "..", "certs");
+if (process.argv.includes("--if-missing")) {
+  const keyExists = fs.existsSync(path.join(outDir, "server.key"));
+  const certExists = fs.existsSync(path.join(outDir, "server.crt"));
+  if (keyExists && certExists) {
+    console.log("Keeping existing TLS certificate and key.");
+    process.exit(0);
+  }
+  if (keyExists || certExists) {
+    console.error("Incomplete TLS key/certificate pair; refusing to overwrite it.");
+    process.exit(1);
+  }
+}
 fs.mkdirSync(outDir, { recursive: true });
 
 const keys = forge.pki.rsa.generateKeyPair(2048);

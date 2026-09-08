@@ -25,7 +25,9 @@ export function startSsoServer({ key, cert, port = 39091 }) {
   const server = https.createServer({ key, cert }, async (req, res) => {
     const body = await readBody(req);
     const resp = ENDPOINTS[req.url];
-    console.log("[sso] %s %s body=%s → %s", req.method, req.url, body.slice(0, 80), resp ? JSON.stringify(resp) : "404");
+    console.log("[sso] %s %s (%dB request) status=%s", req.method,
+      resp ? new URL(req.url, "https://127.0.0.1").pathname : "unknown",
+      Buffer.byteLength(body), resp ? "ok" : "404");
 
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -43,7 +45,7 @@ export function startSsoServer({ key, cert, port = 39091 }) {
     res.end(JSON.stringify(resp));
   });
   server.listen(port, "127.0.0.1", () => {
-    console.log(`sso-emulator listening on https://127.0.0.1:${port}`);
+    console.log(`sso-emulator listening on https://127.0.0.1:${server.address().port}`);
   });
   return server;
 }

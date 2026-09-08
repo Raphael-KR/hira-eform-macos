@@ -52,19 +52,15 @@ function expect(cond, msg) {
 ws.on("open", () => {
   console.log("[client] connected");
   ws.send("0open");
+  // The real agent accepts 0open silently; CHECK_INSTALL is the first response.
+  step = "check_install";
+  sendEnv("install", "kcase", { APIName: 0 });
 });
 
 ws.on("message", (buf) => {
   const txt = buf.toString("utf8");
-  console.log("[client] recv:", txt.length > 120 ? txt.slice(0, 120) + "..." : txt);
+  console.log("[client] received %d bytes", Buffer.byteLength(txt));
   const msg = JSON.parse(txt);
-
-  if (step === "open") {
-    expect(Object.keys(msg).length === 0, "server ack'd 0open with {}");
-    step = "check_install";
-    sendEnv("install", "kcase", { APIName: 0 });
-    return;
-  }
 
   if (step === "check_install") {
     expect(msg.Status === 0, "CHECK_INSTALL Status=0");
@@ -134,7 +130,7 @@ ws.on("message", (buf) => {
     d.finish();
     const inner = JSON.parse(d.output.getBytes());
     expect(inner.Status === 0, "inner Status=0");
-    console.log("  inner payload:", JSON.stringify(inner).slice(0, 80));
+    console.log("  certificate list response received; values suppressed");
     console.log("\n✅ full bootstrap round-trip OK");
     ws.close();
     process.exit(0);
@@ -142,6 +138,6 @@ ws.on("message", (buf) => {
 });
 
 ws.on("error", (err) => {
-  console.error("[client] error:", err);
+  console.error("[client] transport error; details suppressed");
   process.exit(1);
 });

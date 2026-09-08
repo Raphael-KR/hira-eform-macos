@@ -67,20 +67,43 @@ const epki = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
 ]);
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hira-full-"));
+fs.chmodSync(dir, 0o700);
 const certPath = path.join(dir, "signCert.der");
 const keyPath = path.join(dir, "signPri.key");
 fs.writeFileSync(certPath, Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), "binary"));
 fs.writeFileSync(keyPath, Buffer.from(forge.asn1.toDer(epki).getBytes(), "binary"));
 
 // --- spawn server with env ---
-const env = { ...process.env, HIRA_SIGN_CERT: certPath, HIRA_SIGN_KEY: keyPath };
+fs.writeFileSync(path.join(dir, "server.key"), forge.pki.privateKeyToPem(keys.privateKey), { mode: 0o600 });
+fs.writeFileSync(path.join(dir, "server.crt"), forge.pki.certificateToPem(cert), { mode: 0o600 });
+const env = { ...process.env, HIRA_SIGN_CERT: certPath, HIRA_SIGN_KEY: keyPath,
+  HIRA_TLS_DIR: dir, HIRA_PKI_PORT: "0", HIRA_SSO_PORT: "0", HIRA_DEBUG: "1" };
 const srv = spawn(process.execPath, [path.resolve("src/server.js")], { env, stdio: ["ignore", "pipe", "pipe"] });
+const serverExited = new Promise(resolve => srv.once("exit", resolve));
+let serverOutput = "";
+srv.stdout.on("data", d => { serverOutput += d.toString(); });
 srv.stdout.on("data", (d) => process.stdout.write("[srv] " + d));
 srv.stderr.on("data", (d) => process.stderr.write("[srv-err] " + d));
-await new Promise((r) => setTimeout(r, 600));
+let port;
+try {
+  port = await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Server startup timed out")), 5000);
+    srv.once("error", reject);
+    srv.once("exit", () => { clearTimeout(timer); reject(new Error("Server exited before ready")); });
+    srv.stdout.on("data", () => {
+      const match = serverOutput.match(/listening on wss:\/\/127\.0\.0\.1:(\d+)/);
+      if (match) { clearTimeout(timer); resolve(Number(match[1])); }
+    });
+  });
+} catch {
+  srv.kill();
+  await serverExited;
+  fs.rmSync(dir, { recursive: true, force: true });
+  throw new Error("Isolated integration server failed to start.");
+}
 
 // --- client: run bootstrap, then CERT_GENERATE_SIGNDATA ---
-const ws = new WebSocket("wss://127.0.0.1:8443/", { rejectUnauthorized: false });
+const ws = new WebSocket(`wss://127.0.0.1:${port}/`, { rejectUnauthorized: false });
 const sessionKeyId = forge.random.getBytesSync(16);
 let rsaPubKey, sessionId, seedKey, seedIv;
 let step = "open";
@@ -108,18 +131,22 @@ async function finish(ok) {
   finished = true;
   ws.close();
   srv.kill();
-  await new Promise((r) => srv.on("exit", r));
+  await serverExited;
+  if (serverOutput.includes(PW) || serverOutput.includes("FULL_TEST!") || serverOutput.includes("resp =")) ok = false;
+  fs.rmSync(dir, { recursive: true, force: true });
   process.exit(ok ? 0 : 1);
 }
 
-ws.on("open", () => ws.send("0open"));
+ws.on("open", () => {
+  ws.send("0open");
+  // The real agent does not acknowledge 0open. Start CHECK_INSTALL immediately.
+  step = "check";
+  sendEnv("install", "kcase", { APIName: 0 });
+});
 
 ws.on("message", (buf) => {
   const msg = JSON.parse(buf.toString());
-  if (step === "open") {
-    step = "check";
-    sendEnv("install", "kcase", { APIName: 0 });
-  } else if (step === "check") {
+  if (step === "check") {
     step = "init";
     sendEnv("post", forge.util.encode64("FULL_TEST!1!2"), {
       APIName: 1, Version: "1.3.28", Config: '""', ubikeyVer: "x", ubiurl: "", maxpwdcnt: 5,

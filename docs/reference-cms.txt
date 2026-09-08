@@ -5,8 +5,8 @@ PII WARNING: a real signed blob is a replayable login credential for this cert
 (HIRA signs over a static DN, not a per-request nonce). Never commit or share
 a live CMS. The example below uses a fictitious cert.
 
-    node scripts/test-sign.js <password>        # prints your own CMS for diffing
-    node scripts/inspect-cms.js <b64-file>      # parse any CMS
+    node scripts/test-sign.js                 # Keychain signing check; no CMS dump
+    node scripts/inspect-cms.js <b64-file>     # private debugging only; output is sensitive
 
 Example — individual KICA cert for `cn=홍길동,ou=개인,ou=licensedCA,o=KICA,c=KR`:
 

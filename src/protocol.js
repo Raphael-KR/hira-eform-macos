@@ -55,10 +55,8 @@ export async function handleEnvelope(env, session) {
   }
 
   if (process.env.HIRA_DEBUG) {
-    console.log("[proto] req APIName=%s secure=%s keyId=%s",
-      inner.APIName, secureRequest,
-      forge.util.bytesToHex(session.sessionKeyId || "").slice(0, 32));
-    console.log("[proto]   inner =", JSON.stringify(inner).slice(0, 400));
+    console.log("[proto] req APIName=%s secure=%s",
+      Number.isInteger(inner.APIName) ? inner.APIName : "unknown", secureRequest);
   }
 
   const resp = await dispatch(inner, env, session);
@@ -152,7 +150,7 @@ async function dispatch(inner, env, session) {
     }
 
     default:
-      console.warn("unhandled APIName", inner.APIName, inner);
+      console.warn("unhandled APIName", Number.isInteger(inner.APIName) ? inner.APIName : "unknown");
       return { Status: -1 };
   }
 }

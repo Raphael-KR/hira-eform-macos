@@ -71,7 +71,7 @@ See [`docs/SIGN_FLOW.md`](docs/SIGN_FLOW.md) for the full walk-through and
 
 ## Prerequisites
 
-1. **Node.js ≥ 18**.
+1. **Node.js ≥ 20**.
 2. **공동인증서 installed** under `~/Library/Preferences/NPKI/<CA>/USER/<DN>/`,
    containing `signCert.der` + `signPri.key`. If your cert is on a USB stick
    or an iOS "인증서 관리" app, copy the pair to the NPKI directory first.
@@ -81,8 +81,8 @@ See [`docs/SIGN_FLOW.md`](docs/SIGN_FLOW.md) for the full walk-through and
 ## Install & run
 
 ```bash
-git clone <this repo>
-cd macos_agent
+git clone https://github.com/Raphael-KR/hira-eform-macos.git
+cd hira-eform-macos
 npm install
 
 # Generate a self-signed TLS cert for the local WSS endpoint.
@@ -96,7 +96,8 @@ npm start
 ```
 
 Then open `https://ef.hira.or.kr` → 공동인증서 로그인. The agent logs each
-request to stdout; set `HIRA_DEBUG=1` for verbose protocol traces.
+request metadata to stdout; `HIRA_DEBUG=1` adds API numbers and secure-state flags,
+never request/response bodies, passwords, certificate names or SSO tokens.
 
 ## Picking a specific cert
 
@@ -108,12 +109,16 @@ HIRA_SIGN_CERT=/path/to/signCert.der HIRA_SIGN_KEY=/path/to/signPri.key npm star
 
 ## Documentation
 
+- [`docs/CLI_COLLECTION.md`](docs/CLI_COLLECTION.md) — Keychain-backed, browser-free
+  Chuna collection: `npm run collect:chuna -- --from YYYY-MM-DD --to YYYY-MM-DD`.
+  Results are private local files; this is not a recurring scheduled service.
+
 - [`docs/SIGN_FLOW.md`](docs/SIGN_FLOW.md) — end-to-end walk-through of the
   WebSocket handshake, SEED-CBC session, and the three non-obvious CMS
   requirements HIRA enforces.
-- [`docs/reference-cms.txt`](docs/reference-cms.txt) — ASN.1 template of a
-  valid signeddata (generic DN; regenerate your own with
-  `node scripts/test-sign.js <password>`).
+- [`docs/reference-cms.txt`](docs/reference-cms.txt) — ASN.1 template with a
+  generic DN, not a real certificate or replayable login credential.
+- [`docs/RELEASE.md`](docs/RELEASE.md) — public-file checks and release procedure.
 
 ## Scripts
 
@@ -121,9 +126,12 @@ HIRA_SIGN_CERT=/path/to/signCert.der HIRA_SIGN_KEY=/path/to/signPri.key npm star
 |---------------------------------|-----------------------------------------------------|
 | `npm start`                     | Run the emulator (WSS 8443 + SSO 39091)             |
 | `npm run gen-cert`              | Regenerate the self-signed WSS cert                 |
-| `node scripts/test-sign.js <pw>`| Run the sign path standalone, print CMS structure   |
+| `npm test`                      | Run synthetic signer and full protocol tests        |
+| `npm run collect:chuna -- --from YYYY-MM-DD --to YYYY-MM-DD` | Collect records for inclusive treatment dates |
+| `npm run test:collector`        | Offline CLI parser and pagination tests             |
+| `node scripts/test-sign.js`     | Keychain-backed local signing check; no CMS dump    |
 | `node scripts/inspect-cms.js`   | Pretty-print any base64/DER CMS blob                |
-| `node scripts/diagnose-pbes1.js`| Brute-force 8 PBES1 KDF variants if decryption fails|
+| `npm run check:release`        | Check public candidates; reject private file types |
 
 ## Security notes
 
@@ -131,10 +139,11 @@ HIRA_SIGN_CERT=/path/to/signCert.der HIRA_SIGN_KEY=/path/to/signPri.key npm star
   entry are local to your machine. Don't re-use them on another host.
 - A successful CMS signs a static DN, so the output is a replayable login
   credential. Treat log files, capture traces, and CMS dumps as secrets.
-- This project does **not** store your 공동인증서 password anywhere. It is
-  passed through from the browser password prompt, used once to decrypt the
-  RSA key, and kept only in memory (with the decrypted key cached per-path
-  so repeat signs don't re-prompt).
+- Browser login passes the password from the prompt and caches it with the
+  decrypted key in memory. The optional CLI workflow stores it in **macOS
+  Keychain only after your explicit setup**, reads it through a private pipe,
+  and never prints it. CLI results contain private patient information; keep
+  ignored `tmp/` outputs local and out of source control.
 
 ## Intended use
 

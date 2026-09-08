@@ -2,12 +2,14 @@
 //   1. Generate 2048-bit RSA + self-signed cert
 //   2. Wrap the key as PKCS#8 EncryptedPrivateKeyInfo with PBES2 (PBKDF2-SHA1 + SEED-CBC)
 //   3. Write DERs to a tempdir, set env vars, invoke signer.signDn()
-//   4. Parse the returned CMS, verify the RSA-SHA256 signature over signedAttrs
+//   4. Verify wrong-password classification and the returned CMS with OpenSSL
 import forge from "node-forge";
 import "../src/seed.js";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import assert from "node:assert/strict";
+import { BadPasswordError, loadEncryptedKeyDer } from "../src/krPbe.js";
 
 const PW = "testpw1234";
 
@@ -76,6 +78,13 @@ const keyPath = path.join(dir, "signPri.key");
 fs.writeFileSync(certPath, Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(), "binary"));
 fs.writeFileSync(keyPath, Buffer.from(epkiDer, "binary"));
 console.log("wrote", certPath, "and", keyPath);
+
+assert.throws(
+  () => loadEncryptedKeyDer(epkiDer, "definitely-wrong-password"),
+  BadPasswordError,
+  "wrong passwords must map to BadPasswordError",
+);
+console.log("wrong-password classification: OK");
 
 process.env.HIRA_SIGN_CERT = certPath;
 process.env.HIRA_SIGN_KEY = keyPath;

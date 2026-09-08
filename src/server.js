@@ -9,7 +9,7 @@ import { parseEnvelope, handleEnvelope } from "./protocol.js";
 import { startSsoServer } from "./ssoServer.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const certDir = path.resolve(here, "..", "certs");
+const certDir = process.env.HIRA_TLS_DIR || path.resolve(here, "..", "certs");
 const KEY = path.join(certDir, "server.key");
 const CRT = path.join(certDir, "server.crt");
 
@@ -23,7 +23,7 @@ const tlsCrt = fs.readFileSync(CRT);
 
 const httpsServer = https.createServer({ key: tlsKey, cert: tlsCrt });
 
-startSsoServer({ key: tlsKey, cert: tlsCrt });
+startSsoServer({ key: tlsKey, cert: tlsCrt, port: Number(process.env.HIRA_SSO_PORT ?? 39091) });
 
 const wss = new WebSocketServer({ server: httpsServer });
 
@@ -50,17 +50,14 @@ wss.on("connection", (ws, req) => {
       const resp = await handleEnvelope(env, session);
       const out = JSON.stringify(resp);
       console.log("[conn] → %s (%dB resp)", peekApi(env, session), out.length);
-      if (process.env.HIRA_DEBUG) {
-        console.log("[conn]   resp =", out);
-      }
       ws.send(out);
     } catch (err) {
-      console.error("[conn] error:", err, err?.stack);
+      console.error("[conn] request failed; sensitive error details suppressed");
       // If we're past HANDSHAKE, the client expects SEED-encrypted responses.
       // Sending plaintext here looks to the client like the agent crashed,
       // which triggers the "PKI 버전업 / 설치페이지로 이동" fallback in
       // pkiLogin.jsp. Wrap error responses the same way a normal response is.
-      const errBody = { Status: -1, Error: String(err) };
+      const errBody = { Status: -1, Error: "Request failed" };
       if (session.secure) {
         try {
           const cipher = session.seedEncrypt(JSON.stringify(errBody));
@@ -75,7 +72,7 @@ wss.on("connection", (ws, req) => {
   });
 
   ws.on("close", () => console.log("[conn] close"));
-  ws.on("error", (err) => console.error("[conn] err", err));
+  ws.on("error", () => console.error("[conn] transport error"));
 });
 
 function peekApi(env, session) {
@@ -94,7 +91,7 @@ function peekApi(env, session) {
   }
 }
 
-const PORT = 8443;
+const PORT = Number(process.env.HIRA_PKI_PORT ?? 8443);
 httpsServer.listen(PORT, "127.0.0.1", () => {
-  console.log(`hira-eform-macos listening on wss://127.0.0.1:${PORT}`);
+  console.log(`hira-eform-macos listening on wss://127.0.0.1:${httpsServer.address().port}`);
 });
