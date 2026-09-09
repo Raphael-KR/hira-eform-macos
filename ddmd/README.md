@@ -14,6 +14,10 @@ JVM·Wine 외부 설치 경로와 개발 코드·로컬 실행 데이터를 분�
 
 ## 실행
 
+2026-09-09 시험 종료 후 외부 JVM·Wine과 임시 실행 환경을 삭제했다.
+현재 로컬 GUI·업데이트 실행은 중지된 상태이며, 재실행하려면 JVM을 별도로 준비하고
+`.local/ddmd/config.json`의 `java` 경로를 갱신해야 한다. [정리 기록](docs/ddmd-environment-cleanup.md)을 참조한다.
+
 저장소 루트에서 `npm run ddmd:update`를 실행한다.
 `ddmd/gateway_poc/auto-update/run.command`도 같은 진입점을 호출한다.
 
