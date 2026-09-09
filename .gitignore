@@ -33,3 +33,22 @@ downloads/
 browser-profile/
 playwright-report/
 test-results/
+
+# DDMD local runtime, vendor programs and private investigation evidence.
+.local/
+ddmd/gateway_poc/evidence/
+ddmd/gateway_poc/private-downloads/
+ddmd/gateway_poc/update/prepared.json
+ddmd/gateway_poc/isolated-ui/app-launcher/launcher.m
+__pycache__/
+*.pyc
+*.class
+*.jar
+*.exe
+*.dll
+*.db
+*.db3
+*.dat
+*.zip
+*.7z
+*.gz

@@ -12,7 +12,9 @@
     "test:collector": "node --test scripts/test-collector.js scripts/test-release.js",
     "gen-cert": "node scripts/gen-cert.js",
     "test": "node scripts/test-signer.js && node scripts/test-full.js && npm run test:collector",
-    "check:release": "node scripts/check-release.js"
+    "check:release": "node scripts/check-release.js",
+    "ddmd:update": "python3 ddmd/gateway_poc/auto-update/run.py",
+    "test:ddmd": "python3 ddmd/gateway_poc/auto-update/test_auto_update.py"
   },
   "dependencies": {
     "acorn": "^8.18.0",

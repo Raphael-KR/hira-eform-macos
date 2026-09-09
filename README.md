@@ -172,3 +172,10 @@ description — nominative fair use, not endorsement.
 
 See also [PyPinkSign](https://github.com/bandoche/PyPinkSign) for an
 independent Python reference of the 공동인증서 key format.
+
+## DDMD macOS gateway and updates
+
+The separate [DDMD workspace](ddmd/README.md) contains our Java adapters, macOS app launcher,
+headless protocol probes, and automatic updater. Run `npm run ddmd:update` with the local
+configuration prepared. Vendor software, credentials, downloaded notices and runtime state
+are excluded from Git. This does not establish support for actual SAM claim submission.
