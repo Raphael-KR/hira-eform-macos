@@ -1,6 +1,10 @@
 # DDMD Windows 설치본의 Mac 연계 조사
 
-조사일: 2026-09-08 KST. 대상: SSH `user@192.168.219.146`, `C:\hira\DDMD`.
+> 2026-09-08~09 조사 시점의 정적 계약과 단계별 관측이다. 아래 '현재'는 당시 설치본을
+> 뜻한다. 후속 실험·오류 수정·시험 환경 종료는 [히스토리](HISTORY.md),
+> 지금의 재개 조건은 [DDMD README](../README.md)를 따른다.
+
+조사일: 2026-09-08 KST. 대상: 로컬 Windows 시험 PC의 `C:\hira\DDMD` (SSH 계정·호스트 주소 생략).
 
 ## 결론과 검증 범위
 
@@ -250,7 +254,7 @@ Java 분석은 클래스 파일의 상수 풀과 메서드 바이트코드를 Py
 
 ## 2026-09-09 실행 검증: 합성 headless 인증 경계
 
-위 최소 PoC를 [gateway_poc/README.md](../gateway_poc/README.md)에 구현·검증했다. **Windows Session 0에서 Java strict headless 모드의 17개 검사가 통과했다.** 실행한 소스와 라이브러리는 `gateway_poc/evidence/run.json`의 SHA-256으로 식별한다.
+위 최소 PoC를 [gateway_poc/README.md](HISTORY.md#ddmd-offline)에 구현·검증했다. **Windows Session 0에서 Java strict headless 모드의 17개 검사가 통과했다.** 실행한 소스와 라이브러리는 `gateway_poc/evidence/run.json`의 SHA-256으로 식별한다.
 
 실제 DDMD 데이터 클래스 및 `JCAOSSecurityProvider`를 이용해 UI 없이 KeyInfoSet 공급, Credentials 직렬화, SEED 봉투 암호화·복호화, 합성 AuthToken 응답 복원, 만료 판정과 연장, verifier 갱신을 수행했다. 비정상 봉투 입력도 UI 없이 예외로 반환됐다. Node에서 기존 키 복호화 코드를 사용한 합성 키를 Java에 공급했고, Java 봉투를 기존 Node SEED 코드로 복호화하여 직렬화 원본과 일치했다. 한글 합성 DN에 대한 기존 CMS 서명도 OpenSSL로 검증했다.
 
@@ -258,7 +262,7 @@ PoC는 기존 Launcher/ClientContext/MessageCipherAgent를 직접 실행하지 �
 
 **갱신한 결론: 인증 객체·암호 계층을 Windows에서 headless로 재사용할 수 있다는 실행 근거를 확보했다.** 인증서 선택 GUI나 HIRA 전용 DLL을 이 합성 경로에서 호출할 필요가 없었다. 반면 실제 HIRA 서버의 최초 인증·토큰 발급·재발급, 실제 인증서의 키 부가 정보 호환성, SAM 점검·실제 청구·통보 처리는 아직 검증하지 않았다. 합성 토큰의 만료 시각 연장을 실제 서버의 갱신 성공으로 해석하지 않는다.
 
-최종 실행 증거: [Windows 검사 결과](../gateway_poc/evidence/windows-probe.txt), [Node 교차 복호화 결과](../gateway_poc/evidence/node-interop.txt), [실행 식별 정보](../gateway_poc/evidence/run.json). 기존 `macos_agent` 코드는 변경하지 않았고, DDMD 설치본·기관 DB·실제 인증서·SAM을 수정하지 않았다.
+최종 실행 증거: Windows 검사 결과: `ddmd/gateway_poc/evidence/windows-probe.txt` (local only), Node 교차 복호화 결과: `ddmd/gateway_poc/evidence/node-interop.txt` (local only), 실행 식별 정보: `ddmd/gateway_poc/evidence/run.json` (local only). 기존 `macos_agent` 코드는 변경하지 않았고, DDMD 설치본·기관 DB·실제 인증서·SAM을 수정하지 않았다.
 
 ## 2026-09-09 실제 인증 서버 연결 결과
 
@@ -272,10 +276,10 @@ PoC는 기존 Launcher/ClientContext/MessageCipherAgent를 직접 실행하지 �
 
 **판정 갱신: 실제 최초 인증까지는 Windows 완전 headless 경로가 가능하다.** GUI 인증서 선택·HIRA 전용 인증 DLL 호출이 필수라는 장애 요인은 이 경로에서 해소됐다. 전체 gateway 판정에는 후속 토큰 사용·만료 후 재인증, SAM 점검·청구·통보 처리의 실행 증거가 더 필요하다. 이번에는 인증 action만 호출했다.
 
-구현·상세 근거: [실제 인증 README](../gateway_poc/live/README.md), [성공 결과](../gateway_poc/evidence/live-result.json), [실행 환경 대조](../gateway_poc/evidence/live-environment.json). `macos_agent` 코드는 변경하지 않았다.
+구현·상세 근거: [실제 인증 README](HISTORY.md#ddmd-live), 성공 결과: `ddmd/gateway_poc/evidence/live-result.json` (local only), 실행 환경 대조: `ddmd/gateway_poc/evidence/live-environment.json` (local only). `macos_agent` 코드는 변경하지 않았다.
 
 ## 2026-09-09 SAM 제외 추가 검증
 
-[gateway 실행부](../gateway_poc/gateway/README.md)에서 실제 토큰의 만료시각까지 대기 후 재인증·새 tokenId 발급을 확인했다. 독립 SSH/JVM 프로세스를 다시 실행해 인증 복구도 통과했다. 토큰 헤더와 MAC을 이용하는 `CLT_CERT_REQ`는 MSI transport에서 수신처 공개 인증서 1건과 응답 AuthToken을 반환했다. SAM·청구문서·통보를 조회하거나 전송하지 않았다.
+[gateway 실행부](HISTORY.md#ddmd-gateway)에서 실제 토큰의 만료시각까지 대기 후 재인증·새 tokenId 발급을 확인했다. 독립 SSH/JVM 프로세스를 다시 실행해 인증 복구도 통과했다. 토큰 헤더와 MAC을 이용하는 `CLT_CERT_REQ`는 MSI transport에서 수신처 공개 인증서 1건과 응답 AuthToken을 반환했다. SAM·청구문서·통보를 조회하거나 전송하지 않았다.
 
 비정상 인증 응답과 연결 차단 처리는 로컬 오류 주입으로 통과했다. 잘못된 비밀번호·인증서를 운영 서버에 보내는 시험, 만료 토큰의 서버 거절 검증, 실제 네트워크 장애 재현은 하지 않았다. 요청된 SAM 제외 인증·조회 CLI 범위의 결과이며 상시 서비스 또는 전체 MXS/ebMS 업무 gateway 완료를 의미하지 않는다.

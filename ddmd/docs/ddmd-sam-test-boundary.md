@@ -34,7 +34,7 @@
 
 통보 문서명 배열에는 ‘사전점검서비스 결과 통보서’도 존재한다. 서버가 현재 어떤 시험 통보를 발급하는지, SAM 수신까지 제공하는지는 미검증이다.
 
-증거: [선별한 정적 코드](../gateway_poc/evidence/sam-routing-code.txt), [Windows 설치본 해시 대조](../gateway_poc/evidence/sam-routing-library-check.json). 클라이언트·에이전트 JAR 두 개의 사본이 현재 설치본과 일치했다.
+증거: 선별한 정적 코드: `ddmd/gateway_poc/evidence/sam-routing-code.txt` (local only), Windows 설치본 해시 대조: `ddmd/gateway_poc/evidence/sam-routing-library-check.json` (local only). 클라이언트·에이전트 JAR 두 개의 사본이 현재 설치본과 일치했다.
 
 ## 남은 확인과 실행 경계
 

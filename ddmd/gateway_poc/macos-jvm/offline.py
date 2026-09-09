@@ -1,19 +1,21 @@
 from pathlib import Path
 import os,subprocess,shutil,json,hashlib,datetime,tempfile
 root=Path(__file__).resolve().parents[1]
-prefix=Path('/private/tmp/hira-wine-trial/prefix')
-trial=Path(tempfile.mkdtemp(prefix='hira-headless-poc-wine-',dir='/private/tmp/hira-jvm-trial'))
+source=Path(os.environ.get('DDMD_SOURCE_DIR',''))
+if not os.environ.get('DDMD_SOURCE_DIR') or not source.is_absolute() or not (source/'lib').is_dir() or not (source/'data/kmCert.der').is_file():
+ raise SystemExit('Set DDMD_SOURCE_DIR to an absolute DDMD installation directory containing lib/ and data/kmCert.der')
+trial=Path(tempfile.mkdtemp(prefix='hira-headless-poc-macos-',dir='/private/tmp/hira-jvm-trial'))
 (trial/'classes').mkdir(exist_ok=True);(trial/'lib').mkdir(exist_ok=True)
 libs=['ddmd-common-2.0.2.jar','ddmd-agent-1.0.4.jar','bizframe-commons-1.1.2-jdk5.jar','log4j-1.3alpha-9.jar','commons-io-2.0.1.jar','commons-codec-1.4.jar','jcaos-1.3.2.2.jar','bcprov-jdk15-146.jar','bcmail-jdk15-146.jar','ksign_ui-1.5.jar']
 for name in libs:
- matches=list((prefix/'drive_c/hira/DDMD/lib').rglob(name));assert len(matches)==1
+ matches=list((source/'lib').rglob(name));assert len(matches)==1
  shutil.copy2(matches[0],trial/'lib'/name)
 shutil.copy2(root/'macos-jvm/HeadlessAuthProbe.java',trial)
 compiler=Path('/private/tmp/hira-ddmd-inspect/ecj-3.26.0.jar')
 assert hashlib.sha1(compiler.read_bytes()).hexdigest()=='4837be609a3368a0f7e7cf0dc1bdbc7fe94993de'
 shutil.copy2(compiler,trial)
 subprocess.run(['node',str(root/'scripts/make-fixtures.mjs'),str(trial)],check=True)
-env={**os.environ,'WINEPREFIX':str(prefix),'WINEDEBUG':'-all','MVK_CONFIG_LOG_LEVEL':'0'}
+env=os.environ.copy()
 java=['/private/tmp/hira-jvm-trial/zulu8.96.0.205-ca-jdk8.0.504-macosx_aarch64/Contents/Home/bin/java']
 def run(args):
  r=subprocess.run(java+args,cwd=trial,env=env,capture_output=True,text=True,timeout=120)

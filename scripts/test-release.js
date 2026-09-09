@@ -15,6 +15,7 @@ test("publication check allows code but rejects embedded secret-shaped content",
 });
 
 test("DDMD publication allows first-party sources but excludes runtime and evidence", () => {
+  assert.ok(inspectCandidate("ddmd/gateway_poc/wine/offline.py").length);
   for (const path of ["ddmd/gateway_poc/auto-update/auto_update.py", "ddmd/gateway_poc/isolated-ui/GuiBootstrap.java", "ddmd/docs/ddmd-macos-update-test.md"]) assert.deepEqual(inspectCandidate(path), []);
   for (const path of [".local/ddmd/institution.txt", "ddmd/gateway_poc/evidence/result.json", "ddmd/gateway_poc/private-downloads/notice.zip", "ddmd/gateway_poc/update/prepared.json", "ddmd/gateway_poc/isolated-ui/app-launcher/launcher.m", "ddmd/gateway_poc/lib/vendor.jar"]) assert.ok(inspectCandidate(path).length);
 });

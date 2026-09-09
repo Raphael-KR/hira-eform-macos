@@ -21,9 +21,9 @@ if (!fs.existsSync(KEY) || !fs.existsSync(CRT)) {
 const tlsKey = fs.readFileSync(KEY);
 const tlsCrt = fs.readFileSync(CRT);
 
-const httpsServer = https.createServer({ key: tlsKey, cert: tlsCrt });
+export const httpsServer = https.createServer({ key: tlsKey, cert: tlsCrt });
 
-startSsoServer({ key: tlsKey, cert: tlsCrt, port: Number(process.env.HIRA_SSO_PORT ?? 39091) });
+export const ssoServer = startSsoServer({ key: tlsKey, cert: tlsCrt, port: Number(process.env.HIRA_SSO_PORT ?? 39091) });
 
 const wss = new WebSocketServer({ server: httpsServer });
 

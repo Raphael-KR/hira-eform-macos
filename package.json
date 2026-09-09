@@ -1,12 +1,14 @@
 {
   "name": "hira-eform-macos",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
+    "build:app": "node scripts/build-app.js",
+    "test:app": "node --test scripts/test-menubar.js",
     "start": "node src/server.js",
     "collect:chuna": "node scripts/collect-chuna.js",
     "test:collector": "node --test scripts/test-collector.js scripts/test-release.js",

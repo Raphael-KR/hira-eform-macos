@@ -1,4 +1,10 @@
 import os from 'node:os';
+import path from 'node:path';
+const source=process.env.DDMD_SOURCE_DIR;
+if(!source || !path.isAbsolute(source)) {
+ console.error('Set DDMD_SOURCE_DIR to an absolute DDMD installation directory containing data/kmCert.der');
+ process.exit(2);
+}
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {spawnSync} from 'node:child_process';
@@ -23,7 +29,7 @@ try{
  const digestInfo=entry.value[1];const algorithm=oid(digestInfo.value[0].value[0]);ensure(algorithm==='2.16.840.1.101.3.4.2.1');
  ensure(crypto.timingSafeEqual(Buffer.from(digestInfo.value[1].value,'binary'),crypto.createHash('sha256').update(enc).digest()));report.signedAttachmentDigestMatches=true;report.digestAlgorithm='SHA-256';
  const pkcs7=forge.pkcs7.messageFromAsn1(forge.asn1.fromDer(sig.toString('binary')));ensure(pkcs7.certificates.length===1);
- const signer=pkcs7.certificates[0];const center=forge.pki.certificateFromAsn1(forge.asn1.fromDer(fs.readFileSync('/private/tmp/hira-wine-trial/prefix/drive_c/hira/DDMD/data/kmCert.der').toString('binary')));
+ const signer=pkcs7.certificates[0];const center=forge.pki.certificateFromAsn1(forge.asn1.fromDer(fs.readFileSync(path.join(source,'data','kmCert.der')).toString('binary')));
  report.signerMatchesInstalledCenterKey=signer.publicKey.n.equals(center.publicKey.n)&&signer.publicKey.e.equals(center.publicKey.e);
  report.signerCurrentlyValid=Date.now()>=signer.validity.notBefore&&Date.now()<=signer.validity.notAfter;
  report.signerCertificateSha256=crypto.createHash('sha256').update(Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(signer)).getBytes(),'binary')).digest('hex');

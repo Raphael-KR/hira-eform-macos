@@ -1,49 +1,60 @@
-# DDMD macOS 개발 환경
+# DDMD macOS 연구
 
-개발 코드·문서의 정식 위치는 이 저장소의 `ddmd/`다.
-JVM·Wine 외부 설치 경로와 개발 코드·로컬 실행 데이터를 분리한다.
+이 폴더는 DDMD의 Java 인증·통보 처리·업데이트·격리 GUI를 조사한 **별도 연구 영역**이다.
+[e-Form 로그인 및 메뉴 막대 앱](../README.md)과 실행 경로·검증 범위가 다르다.
+둘의 성공 판정을 서로 대신 사용하지 않는다.
+
+## 현재 상태
+
+2026-09-09 시험 종료 후 외부 JVM과 임시 실행 환경을 제거했다.
+**현재 GUI·실서버 업데이트를 바로 실행할 수 있는 배포판이 아니다.**
+소스와 비공개 로컬 데이터는 보존했다. 실제 SAM 청구 전송은 시험에서 제외했다.
+
+macOS JVM에서 실제 인증·통보 로컬 처리·업데이트 흐름을 검증한 기록은 있으나,
+CA 신뢰/폐지 검증, 원본 DDMD 전체 기능과 실제 청구 접수까지 완료한 것은 아니다.
+초기 실패, 후속 수정, 최종 환경 정리를 [실험 히스토리](docs/HISTORY.md)에 함께 기록했다.
+
+## 문서 안내
+
+| 문서 | 역할 |
+|---|---|
+| [작업 히스토리와 실험](docs/HISTORY.md) | 단계별 결과 요약과 12개 원기록과 폐기 경로 요약 |
+| [Windows 설치본 분석](docs/ddmd-integration-analysis.md) | 정적 구조·명령·암호/세션 계약 |
+| [구형 API 대조](docs/ddmd-legacy-api-compatibility.md) | 공식 자료와 설치본 스키마 차이 |
+| [SAM 시험 경계](docs/ddmd-sam-test-boundary.md) | 사전점검·시험 권한·실제 전송의 구분 |
+| [biz 사이트맵](docs/biz-hira-sitemap.md) | 비로그인 메뉴 구조·ID |
+| [코드와 진단 도구](gateway_poc/README.md) | 디렉터리별 역할과 과거 실행 경로 주의 |
+| [자동 업데이트 실행기](gateway_poc/auto-update/README.md) | 준비 조건·적용 순서·실패/복구 계약 |
+
+과거 보고서에 흩어진 표·실패·수치는 히스토리에서 보존한다.
+문서의 evidence 경로는 로컬 자료 위치를 설명할 뿐 공개 파일 링크가 아니다.
+
+## 폴더와 비공개 자료
 
 | 대상 | 위치 | Git |
 |---|---|---|
-| 자동 업데이트·GUI 호환·인증 프로브 | `ddmd/gateway_poc/` | 포함 |
-| 분석·검증 문서 | `ddmd/docs/` | 포함 |
-| DDMD 활성 버전·DB·프로그램 파일·기관 설정 | `.local/ddmd/` | 제외 |
-| 인증서·비밀번호 | macOS NPKI·Keychain | 제외 |
-| 개인 통보 파일·실행 원본 로그·검증 상세 자료 | 로컬 전용 폴더 | 제외 |
-| JVM·Wine | 별도 외부 설치 경로 | 제외 |
+| 개발 소스·어댑터·진단 도구 | `ddmd/gateway_poc/` | 포함 |
+| 현재 안내·실험 이력·정적 참고 | `ddmd/docs/` 및 이 README | 포함 |
+| 활성 버전·프로그램 파일·기관 설정·DB | 저장소 루트의 `.local/ddmd/` | 제외 |
+| 인증서·암호 | 사용자 NPKI·macOS Keychain | 제외 |
+| 통보 파일·원본 로그·검증 상세 자료 | 로컬 전용 폴더 | 제외 |
+| JVM·제공사 설치본 | 별도 준비 | 제외 |
 
-## 실행
+## 재개 조건과 실행 영향
 
-2026-09-09 시험 종료 후 외부 JVM·Wine과 임시 실행 환경을 삭제했다.
-현재 로컬 GUI·업데이트 실행은 중지된 상태이며, 재실행하려면 JVM을 별도로 준비하고
-`.local/ddmd/config.json`의 `java` 경로를 갱신해야 한다. [정리 기록](docs/ddmd-environment-cleanup.md)을 참조한다.
+재개하려면 호환 JVM과 사용 권한이 있는 DDMD 설치본을 준비하고,
+`.local/ddmd/config.json`의 `java`와 `source` 절대 경로를 확인한다.
+`institution.txt`는 기관번호 한 줄, 권한 0600으로 보관한다.
+`active.json`은 활성 실행 대상을 가리킨다. 이 설정·데이터는 Git에 없다.
 
-저장소 루트에서 `npm run ddmd:update`를 실행한다.
-`ddmd/gateway_poc/auto-update/run.command`도 같은 진입점을 호출한다.
+준비와 실서버/GUI 실행 승인이 끝난 뒤에만 저장소 루트에서
+`npm run ddmd:update`를 사용한다. 인증·조회·다운로드·후보 적용·앱 시작·서버 결과 보고를
+수행하므로 읽기 전용 검사가 아니다. 최신이면 적용/재시작/보고 없이 종료한다.
+원본 GUI 업데이트 버튼·OS 주기 실행에는 연결하지 않았다.
+자세한 순서와 실패 처리는 [실행기 가이드](gateway_poc/auto-update/README.md)를 따른다.
 
-로컬 준비 상태는 `.local/ddmd/config.json`, `institution.txt`, `active.json`으로 관리한다.
-config.json은 외부 JVM의 `java` 절대 경로와 DDMD 초기 설치본의 `source` 절대 경로를 갖는다.
-기관번호는 institution.txt의 한 줄이며 파일 권한은 0600으로 유지한다.
-이 파일들은 저장소에 포함되지 않으므로 다른 컴퓨터에서는 로컬 설정과
-외부 JVM·정식 DDMD 설치본을 별도로 준비해야 한다. 인증서 로더는 현재 사용자의 NPKI와 Keychain을 사용한다.
+## 코드 검증
 
-자동 업데이트는 조회·수신·검증·후보 적용·macOS 앱 시작·결과 보고·최종 조회를 수행한다.
-원본 GUI의 업데이트 버튼·OS 스케줄에는 아직 연결하지 않았다.
-완료한 구버전 폴더는 보존되며 active.json이 현재 실행 대상이다.
-
-## 검증과 유지보수
-
-- `npm test`: 기존 인증기 및 공개 파일 검사 테스트
-- `npm run test:ddmd`: DDMD 업데이트 안전/실패 경로
-- `npm run check:release`: 공개 소스 허용 목록·비밀정보 형태 검사
-
-기존 `gateway`, `live`, `wine`, `macos-jvm`, `scripts`, `update` 디렉터리에는 당시
-시험 경로를 사용하는 진단 도구도 포함된다. 정식 실행 진입점은 `auto-update/run.py`다.
-과거 Windows 진단 도구는 `DDMD_WINDOWS_TEMP` 환경 변수로 원격 임시 폴더를 지정한다.
-기존 문서의 임시 경로·시험 실패는 역사적 기록이며 현재 실행 설정이 아니다.
-문서에 언급된 상세 evidence와 개인 파일은 로컬 전용으로 공개하지 않는다.
-
-2026-09-09 경로 이전 검증: 라이브러리·데이터 파일 186개 해시 일치,
-정식 로컬 경로에서 앱 본 화면·환경설정 표시, macOS 인증을 통한
-업데이트 조회 0개를 확인했다. JVM·Wine은 이동하거나 재설치하지 않았다.
-실제 SAM 청구 전송은 검증하지 않았으며 시험에서 제외했다.
+저장소 루트에서 `npm run test:ddmd`로 업데이트 안전/실패 경로의 합성 검사를,
+`npm run check:release`로 공개 후보 검사를 수행한다.
+합성 검사 통과는 삭제된 JVM 복구나 실제 SAM·GUI 검증을 뜻하지 않는다.
