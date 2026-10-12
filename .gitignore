@@ -15,6 +15,14 @@ certs/*.crt
 # Anything mirrored from HIRA for reverse-engineering. These captures
 # contain live session cookies and replayable signeddata.
 recon/
+!tools/recon/
+tools/recon/*
+!tools/recon/README.md
+!tools/recon/launch-chrome.ps1
+!tools/recon/capture-cdp.ps1
+!tools/recon/capture-cdp-hooked.ps1
+!tools/recon/extract_frames.py
+!tools/recon/extract_hooked.py
 
 # Private credentials, collection output and browser/network captures.
 .env

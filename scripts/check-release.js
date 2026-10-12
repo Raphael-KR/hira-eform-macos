@@ -7,7 +7,8 @@ export function inspectCandidate(name, content = "") {
   const allowed = /^(?:\.gitignore|README\.md|package(?:-lock)?\.json|src\/[\w-]+\.js|scripts\/[\w-]+\.(?:js|swift)|docs\/[\w-]+\.(?:md|txt)|\.github\/workflows\/[\w-]+\.ya?ml)$/;
   const ddmdSource = /^ddmd\/(?:README\.md|docs\/[\w-]+\.md|gateway_poc\/(?:README\.md|(?:auto-update|gateway|isolated-ui(?:\/app-launcher)?|live|macos-jvm|scripts|src|update)\/[\w-]+\.(?:java|py|mjs|md|command)))$/;
   const appSource = /^(?:macos\/[\w-]+\.swift|macos\/assets\/AppIcon\.png)$/;
-  if (!allowed.test(name) && !ddmdSource.test(name) && !appSource.test(name)) issues.push("file is outside the public source allowlist");
+  const reconSource = /^tools\/recon\/(?:README\.md|(?:launch-chrome|capture-cdp|capture-cdp-hooked)\.ps1|(?:extract_frames|extract_hooked)\.py)$/;
+  if (!allowed.test(name) && !ddmdSource.test(name) && !appSource.test(name) && !reconSource.test(name)) issues.push("file is outside the public source allowlist");
   if (/-----BEGIN (?:[A-Z ]*PRIVATE KEY|CERTIFICATE)-----/.test(content)) issues.push("embedded PEM credential");
   if (/["'][A-Za-z0-9+/]{256,}={0,2}["']/.test(content)) issues.push("large embedded base64 value needs review");
   if (/\/Users\/(?!<|example\b)[A-Za-z0-9_.-]+\//.test(content)) issues.push("owner-specific absolute path");

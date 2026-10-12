@@ -2,6 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { inspectCandidate } from "./check-release.js";
 
+test("recon publication permits only reviewed tools, never captures", () => {
+  for (const name of ["README.md", "launch-chrome.ps1", "capture-cdp.ps1", "capture-cdp-hooked.ps1", "extract_frames.py", "extract_hooked.py"]) {
+    assert.deepEqual(inspectCandidate(`tools/recon/${name}`), []);
+  }
+  for (const name of ["cookies.txt", "hira-capture.jsonl", "hooked-report.txt", "unknown.py", "vendor.js"]) {
+    assert.ok(inspectCandidate(`tools/recon/${name}`).length);
+  }
+});
+
 test("publication check rejects data, credentials and unknown paths", () => {
   for (const file of ["tmp/results.json", "results.json", "docs/receipt.json", "signPri.key", ".env", "recon/capture.jsonl", "notes.txt"]) {
     assert.ok(inspectCandidate(file).length);
