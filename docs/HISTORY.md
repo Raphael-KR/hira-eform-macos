@@ -15,6 +15,84 @@
 
 ## e-Form 개발 이력
 
+### 2026-10-23: AP-83 비운영 실행환경 점검
+
+- 목표: 기존 Node/Python/Java 참조와 설치 상태를 대조하고 필요한 정비만 수행한다.
+- 범위: 저장소 소스, 설치 의존성, 런타임 버전 및 과거 DDMD 경로의 존재 여부.
+- 완료 조건: 설치 필요성, 관측 결과, 실행 exit와 미검증 범위를 기록한다.
+- 제외: 외부 호출, 인증/Keychain/실데이터, GUI, 앱 실행·배포·재시작, 기존 환경 삭제.
+- 검증: 의존성 import와 문법만 검사하며 합성 자료나 DB를 생성하지 않는다.
+
+작업 전 `main...origin/main` working tree는 깨끗했다. 이번 정비는 문서만 변경했다.
+Node/Python 재설치, 패키지 변경, Java 설치는 수행하지 않았다.
+
+| 관측·명령 | 결과 | exit |
+|---|---|---|
+| `node`의 `process.execPath/version/arch` | `/opt/homebrew/Cellar/node/26.12.1/bin/node`, v26.12.1, arm64 | 0 |
+| `npm --version` | 11.20.0 | 0 |
+| `python3 -B`의 `sys.executable/version` | `/opt/homebrew/opt/python@3.15/bin/python3.15`, 3.15.0 | 0 |
+| `npm ls --depth=0 --offline` | acorn 8.18.0, cheerio 1.0.0, iconv-lite 0.7.2, node-forge 1.4.0, tough-cookie 6.0.2, ws 8.21.3 | 0 |
+| `node --input-type=module -e`에서 위 6개 의존성 import | 모두 성공; 서버 모듈은 import하지 않음 | 0 |
+| Git 추적 Python의 `ast.parse`, JS/MJS/CJS의 `node --check` | Python 17개, JavaScript 40개 문법 통과; Python 파일 실행 없음 | 0 |
+| `/usr/libexec/java_home -V` | 등록 Java 없음 | 1 |
+| `stat`으로 `.local/ddmd`, `.local/ddmd/config.json`, 아래 과거 Java 경로 확인 | 세 경로 모두 없음 | 1 |
+| 프로젝트 아래 java/javac/jdk/jre 이름 검색 | 일치 경로 없음 | 0 |
+
+앞선 점검의 Python 3.14.9와 이번 `python3` 3.15.0 관측은 다르다.
+이번 작업에서는 PATH·Python 설치를 변경하지 않았으며 변경 원인은 미확인이다.
+
+DDMD 실행기는 `config.json`의 `java` 절대 경로를 사용하므로 `java_home` 결과만으로
+전용 JVM 부재를 판단하지 않았다. 과거 소스의
+`/private/tmp/hira-jvm-trial/zulu8.96.0.205-ca-jdk8.0.504-macosx_aarch64/Contents/Home/bin/java`
+도 존재하지 않는다. 별도 위치의 JVM 전체 부재를 뜻하지는 않는다.
+현재 DDMD는 실행 가능한 배포판이 아니며, 최신 설치본으로 재개하려는 기존 결정에 따라
+구형 JVM만 임의 복구하지 않았다. 재개 시 최신 설치본과 호환 JVM·로컬 설정이 필요하다.
+
+Node는 package.json의 `>=20` 범위를 충족하지만 CI 행렬은 20/22/24다.
+이번 문법·import 검사는 Node 26의 로그인/전체 기능 호환성을 보증하지 않는다.
+앱 빌더는 Node의 realpath를 Runtime.json에 고정한다. 후속 읽기 전용 확인에서
+`/Applications/HIRA e-Form.app/Contents/Resources/Runtime.json`을 읽었다(exit 0).
+설치 앱의 `nodeExecutable`은 `/opt/homebrew/Cellar/node/26.6.0/bin/node`이며,
+`ls -l`은 파일 없음(exit 1), 해당 경로의 `--version`은 파일 없음(exit 127)이었다.
+파일이 없으므로 실행 가능하지 않다. 반면 현재 CLI Node 경로는
+`/opt/homebrew/Cellar/node/26.12.1/bin/node`, v26.12.1(exit 0)이다.
+따라서 설치 앱의 고정 Node 경로는 현재 유효하지 않다. 앱 자체는 실행하지 않았다.
+보완 대상은 설치 앱의 Runtime.json의 nodeExecutable 또는 현재 Node로 재빌드한 앱이다.
+보완하면 앱이 사용하는 Node 버전이 바뀌므로 별도 배포 범위에서 적용·검증해야 한다.
+이번에는 설치 메타정보를 변경하거나 앱을 재빌드·재설치·재시작하지 않았다.
+전체 테스트·앱 빌드·DDMD 실행·운영 smoke는 수행하지 않았다.
+소스, lockfile, 로컬 자료, 인증 설정과 기존 운영 프로세스는 변경하지 않았다.
+공통 정비 PLAN/inventory, MSL·Telegram, Git 원격 상태도 변경하지 않았다.
+
+### 2026-10-23: AP-84 설치 앱 Node 경로 보완
+
+사용자 승인 메시지 `01a16517-6125-76a3-a069-c6e13d2b8849`에 따라
+`/Applications/HIRA e-Form.app` 복사본의 Runtime.json에서 nodeExecutable만
+26.6.0에서 `/opt/homebrew/Cellar/node/26.12.1/bin/node`로 수정했다.
+projectDirectory는 그대로 유지했다. Swift 재컴파일은 하지 않았다.
+
+원본은 저장소의 `.local/app-maintenance/AP84-20261023/HIRA e-Form.original.app`에
+이동하여 보존했다. 후보는 같은 폴더의 `HIRA e-Form.candidate.app`이다.
+원본 및 후보를 삭제하거나 롤백하지 않았다. 작업 전 `pgrep -x HiraEForm`은
+exit 1로 실행 중 앱이 없었으므로 종료도 하지 않았다.
+
+- 원본 `codesign --verify --strict`: 보존 전·후 exit 0.
+- 후보 `ditto`, `codesign --force --sign -`, `codesign --verify --strict`: 각각 exit 0.
+- 원본 이동 `mv`, 후보의 Applications 설치 `ditto`: 각각 exit 0.
+- 설치 앱 `codesign --verify --strict`, `codesign -d --verbose=4 -r-`: 각각 exit 0.
+- 후보와 설치 앱 `diff -rq`: exit 0. 원본과 후보는 exit 1이며 변경은
+  Runtime.json, CodeResources, 내장 서명이 변경된 Mach-O 실행파일 3개뿐이다.
+- 설치 Runtime.json 재조회 exit 0, 지정 Node의 `--version`은 v26.12.1, exit 0.
+- 전후 Identifier는 `kr.raphael.hira-eform-macos`, 서명은 ad-hoc, Team ID는 없음.
+- 원본 CDHash: `3937f5f2c00ce2b557b179250b93b6703b865e77`.
+- 설치 CDHash: `6eed3576fe1f699586b9a6fb46cad5cbc72817f7`.
+- 전후 designated requirement는 각각 해당 CDHash를 사용하는 `cdhash H"..."`이다.
+
+설치·서명·Node 실행 경로 확인만 완료했다. 앱 실행, 로그인, 실서버 연결,
+Keychain/TCC 조작이나 권한 재승인 관측은 하지 않았다. 신원 변경에 따른 실제
+권한 재승인 필요 여부와 인증/업무 성공은 미검증이다. 공통 Node·DDMD·다른 운영 환경,
+기존 미커밋 문서는 보존했고 Git push/merge는 하지 않았다.
+
 ### 2026-04: Node.js 호환성 PoC
 
 Windows 로컬 에이전트와 사이트 JavaScript의 통신을 관찰하고 Node.js로 재현했다.
