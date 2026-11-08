@@ -22,7 +22,7 @@ CLI 수집은 위 로컬 서버를 켤 필요가 없다. Keychain 준비와 개�
 
 ### 1. 공통 준비
 
-macOS, Node.js 20 이상, 본인 또는 사용 권한이 있는 공동인증서가 필요하다.
+macOS, Node.js 20.18.1 이상, 본인 또는 사용 권한이 있는 공동인증서가 필요하다.
 앱을 직접 빌드할 때는 Xcode Command Line Tools도 필요하다.
 
 ```bash

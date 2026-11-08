@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.18.1"
   },
   "scripts": {
     "build:app": "node scripts/build-app.js",
@@ -19,11 +19,11 @@
     "test:ddmd": "python3 ddmd/gateway_poc/auto-update/test_auto_update.py"
   },
   "dependencies": {
-    "acorn": "^8.18.0",
-    "cheerio": "^1.0.0",
-    "iconv-lite": "^0.7.2",
+    "acorn": "^8.19.0",
+    "cheerio": "^1.2.0",
+    "iconv-lite": "^0.7.3",
     "node-forge": "^1.3.1",
     "tough-cookie": "^6.0.2",
-    "ws": "^8.21.3"
+    "ws": "^8.22.0"
   }
 }
